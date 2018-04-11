@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>地址解析</title>
+    <style type="text/css">
+        *{
+            margin:0px;
+            padding:0px;
+        }
+        body, button, input, select, textarea {
+            font: 12px/16px Verdana, Helvetica, Arial, sans-serif;
+        }
+        p{
+            width:603px;
+            padding-top:3px;
+            margin-top:10px;
+            overflow:hidden;
+        }
+        input#address{
+            width:300px;
+        }
+        #container {
+            min-width:603px;
+            min-height:767px;
+        }
+    </style>
+    <script type="text/javascript" src="../js/jquery.min.js"></script>
+    <script charset="utf-8" src="http://map.qq.com/api/js?v=2.exp"></script>
+    <script>
+        var geocoder,map,marker = null;
+        var init = function() {
+            var center = new qq.maps.LatLng(30.4628100000,114.4242600000);   //智慧园, 经纬度经度可能有问题
+            map = new qq.maps.Map(document.getElementById('container'),{
+                center: center,
+                zoom: 15
+            });
+
+            //调用地址解析类
+            geocoder = new qq.maps.Geocoder({
+                complete : function(result){
+                    map.setCenter(result.detail.location);
+                    var marker = new qq.maps.Marker({
+                        map:map,
+                        position: result.detail.location
+                    });
+                    document.getElementById("lat").value = result.detail.location.lat;
+                    document.getElementById("lng").value = result.detail.location.lng;
+                }
+            });
+
+            //绑定单击事件添加参数
+            qq.maps.event.addListener(map, 'click', function(event) {
+                // alert('您点击的位置为: [' + event.latLng.getLat() + ', ' +
+                //     event.latLng.getLng() + ']');
+                document.getElementById("lat").value = event.latLng.getLat();
+                document.getElementById("lng").value = event.latLng.getLng();
+
+                //获取实时地址
+                var url = encodeURI("http://apis.map.qq.com/ws/geocoder/v1/?location=" + event.latLng.getLat() + "," + event.latLng.getLng() + "&key=WCBBZ-AFYW6-4CPS6-E6X75-ZPJYE-L5FWY&output=jsonp&&callback=?");
+                $.getJSON(url, function (result) {
+                    if(result.result!=undefined){
+                        document.getElementById("address").value = result.result.address;
+                    }else{
+                        document.getElementById("address").value = "";
+                    }
+
+                    $('#province').val(result.result.address_component.province);
+                    $('#city').val(result.result.address_component.city);
+                    $('#district').val(result.result.address_component.district);
+                    $('#street').val(result.result.address_component.street);
+                    $('#street_number').val(result.result.address_component.street_number);
+
+                })
+            });
+
+        }
+
+
+        //解析地址数据
+        function codeAddress() {
+            var address = document.getElementById("address").value;
+            //通过getLocation();方法获取位置信息值
+            geocoder.getLocation(address);
+        }
+
+        //保存地址数据
+        function save() {
+            var address = $.trim($('#address').val());
+            var lat = $.trim($('#lat').val());
+            var lng = $.trim($('#lng').val());
+
+            var province = $.trim($('#province').val());
+            var city = $.trim($('#city').val());
+            var district = $.trim($('#district').val());
+            var street = $.trim($('#street').val());
+            var street_number = $.trim($('#street_number').val());
+            if (address == "" || lat == "" || lng == "" ) {
+                alert("不能为空");
+            } else {
+                $.ajax({
+                    type: "post",
+                    url: "../parseAddress/save",
+                    data: {"name": address, "latitude": lat, "longitude": lng,
+                        "firstRegional": province,"secondRegional": city,"thirdRegional": district,"fourthRegional": street,"fifthRegional": street_number},
+                    success: function (msg) {
+                            alert(msg);
+                    },
+                    error: function (msg) {
+                        alert(msg);
+                    }
+                });
+        }
+        }
+    </script>
+</head>
+<body onload="init()">
+<div>
+    <input id="address" class="address" type="textbox" value="湖北省武汉市江夏区智慧园26栋">
+    <button onclick="codeAddress()">search</button>
+    经度:<input type="text" id="lat" class="lat">
+    纬度:<input type="text" id="lng" class="lng">
+    <button onclick="save()">save</button>
+
+    <!--5级地址-->
+    <div>
+    省:<input type="text" id="province" class="province">
+    市:<input type="text" id="city" class="city">
+    区:<input type="text" id="district" class="district">
+    街道:<input type="text" id="street" class="street">
+    门牌号:<input type="text" id="street_number" class="street_number">
+    </div>
+</div>
+<div id="container"></div>
+<p>输入地址，点击search进行地址解释。</p>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>电子围栏</title>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=百度密钥"></script>
+    <script type="text/javascript" src="http://api.map.baidu.com/library/GeoUtils/1.2/src/GeoUtils_min.js"></script>
+    <!--加载鼠标绘制工具-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
+    <style type="text/css">
+        table{
+            font-size:14px;
+        }
+    </style>
+</head>
+<body>
+<div style="float:left;width:100%;height:500px;border:1px solid gray" id="container"></div>
+<div style="float:left;width:100%;border:1px solid gray" id="control">
+    <table style="width:100%;" >
+        <tr>
+            <td colspan="2">判断点是否在指定区域内: </td>
+        </tr>
+        <tr>
+            <td><button onclick="ptInPolygon()">判断</button>
+                <button onclick="clearPolygon()">清除</button>
+            </td>
+        </tr>
+    </table>
+</div>
+<div id="shape">右键获取任意点的经纬度,坐标为:</div>
+</body>
+</html>
+<script type="text/javascript">
+    var map = new BMap.Map("container");
+    var pt = new BMap.Point(114.431151,30.468772);
+    map.centerAndZoom(pt, 18);
+
+    map.enableScrollWheelZoom();//开启滚动缩放
+    map.enableContinuousZoom();//开启缩放平滑
+
+    function $(id){
+        return document.getElementById(id);
+    }
+
+    //绘制范围
+    var pts = [];
+    map.addEventListener("rightclick",function(e){
+        $("shape").innerHTML=$("shape").innerHTML+" <br/>("+e.point.lng+","+e.point.lat+")";
+        var pt = new BMap.Point(e.point.lng,e.point.lat);
+        pts.push(pt);
+        var ply = new BMap.Polyline(pts, {strokeColor: "red", strokeStyle:"dashed"});
+        map.addOverlay(ply);
+    });
+
+    //点在多边形内
+    function ptInPolygon(){
+        var pt =new BMap.Point(114.431363,30.469658);
+        var ply = new BMap.Polygon(pts, {strokeColor: "red", strokeStyle:"dashed"});
+        var result = BMapLib.GeoUtils.isPointInPolygon(pt, ply);
+        if(result == true){
+            alert("点在指定区域内");
+        } else {
+            alert("点在指定区域外");
+        }
+
+        //演示：将面添加到地图上
+        map.clearOverlays();
+        var mkr = new BMap.Marker(pt);
+        map.addOverlay(mkr);
+        map.addOverlay(ply);
+    }
+
+    function clearPolygon() {
+        $("shape").innerHTML = "";
+        pts.length = 0;
+        map.clearOverlays();
+    }
+
+
+
+</script>
